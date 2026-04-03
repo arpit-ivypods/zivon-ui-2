@@ -2,11 +2,9 @@ import { useState } from 'react'
 import DashboardFlat from './pages/DashboardFlat'
 import Dashboard3D from './pages/Dashboard3D'
 import NeuralNexus from './neural-nexus/NeuralNexus'
-import NeuralNexusV2 from './neural-nexus-v2/NeuralNexusV2'
 
 const PAGES = [
-  { key: 'neuralv2', label: 'Neural V2', component: NeuralNexusV2 },
-  { key: 'neural', label: 'Neural V1', component: NeuralNexus },
+  { key: 'neural', label: 'Neural Nexus', component: NeuralNexus },
   { key: 'flat', label: 'Classic', component: DashboardFlat },
   { key: '3d',   label: '3D View', component: Dashboard3D },
 ]
