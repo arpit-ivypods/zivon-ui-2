@@ -1,161 +1,140 @@
-import { useRef, useMemo } from 'react'
+import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { Text, Float } from '@react-three/drei'
+import { Float, Html } from '@react-three/drei'
 import * as THREE from 'three'
 
-// Shared geometries - created once, reused across all nodes
-const outerRingGeo = new THREE.RingGeometry(0.65, 0.7, 64)
-const middleRingGeo = new THREE.RingGeometry(0.5, 0.55, 64)
-const innerRingGeo = new THREE.RingGeometry(0.35, 0.42, 64)
-const coreDiscGeo = new THREE.CircleGeometry(0.32, 32)
-const glowSphereGeo = new THREE.SphereGeometry(0.05, 12, 12)
+// Shared geometries
+const outerRingGeo = new THREE.RingGeometry(0.55, 0.57, 64)
+const middleRingGeo = new THREE.RingGeometry(0.42, 0.44, 64)
+const coreDiscGeo = new THREE.CircleGeometry(0.35, 32)
 
 export default function HudNode({ position, name, metric, index, icon }) {
   const outerRingRef = useRef()
   const middleRingRef = useRef()
-  const innerRingRef = useRef()
-  const glowSphereRef = useRef()
+  const coreRef = useRef()
 
-  // Rotation directions: alternate per node, inner same as outer
   const outerDir = index % 2 === 0 ? 1 : -1
-  const middleDir = -outerDir // counter-rotates
-  const innerDir = outerDir   // same as outer
-
-  // Rotation speeds (radians per second)
-  const outerSpeed = 0.08
-  const middleSpeed = 0.12
-  const innerSpeed = 0.06
-
-  // Determine icon color: frontend gets cyan, rest get orange/gold
-  const isFrontend = name.toLowerCase().includes('frontend')
-  const iconColor = isFrontend ? '#00E5FF' : '#FF9100'
 
   useFrame(({ clock }, delta) => {
-    // Rotate outer tech ring
     if (outerRingRef.current) {
-      outerRingRef.current.rotation.z += outerDir * outerSpeed * delta
+      outerRingRef.current.rotation.z += outerDir * 0.08 * delta
     }
-    // Counter-rotate middle detail ring
     if (middleRingRef.current) {
-      middleRingRef.current.rotation.z += middleDir * middleSpeed * delta
+      middleRingRef.current.rotation.z -= outerDir * 0.12 * delta
     }
-    // Rotate inner glow ring
-    if (innerRingRef.current) {
-      innerRingRef.current.rotation.z += innerDir * innerSpeed * delta
-    }
-    // Pulse the center glow sphere
-    if (glowSphereRef.current) {
-      const time = clock.getElapsedTime()
-      const pulse = 0.5 + 0.5 * Math.sin(time * 2.5 + index * 0.7)
-      glowSphereRef.current.material.opacity = 0.3 + 0.7 * pulse
-      const s = 0.8 + 0.4 * pulse
-      glowSphereRef.current.scale.setScalar(s)
+    if (coreRef.current) {
+      const t = clock.getElapsedTime()
+      coreRef.current.material.opacity = 0.7 + 0.15 * Math.sin(t * 1.5 + index)
     }
   })
 
   return (
-    <Float speed={1.5} floatIntensity={0.25} rotationIntensity={0}>
+    <Float speed={1.5} floatIntensity={0.2} rotationIntensity={0}>
       <group position={position}>
-        {/* 1. Outer tech ring - dashed look, cyan, slow rotate */}
+        {/* 1. Outer ring - thin, faint cyan */}
         <mesh ref={outerRingRef} geometry={outerRingGeo}>
           <meshBasicMaterial
             color="#00E5FF"
             transparent
-            opacity={0.3}
+            opacity={0.25}
             side={THREE.DoubleSide}
             toneMapped={false}
           />
         </mesh>
 
-        {/* 2. Middle detail ring - brighter cyan, counter-rotate */}
+        {/* 2. Middle accent ring - very faint cyan */}
         <mesh ref={middleRingRef} geometry={middleRingGeo}>
           <meshBasicMaterial
             color="#00E5FF"
             transparent
-            opacity={0.5}
+            opacity={0.15}
             side={THREE.DoubleSide}
             toneMapped={false}
           />
         </mesh>
 
-        {/* 3. Inner glow ring - orange/gold accent */}
-        <mesh ref={innerRingRef} geometry={innerRingGeo}>
+        {/* 3. Inner core - dark translucent */}
+        <mesh ref={coreRef} geometry={coreDiscGeo}>
           <meshBasicMaterial
-            color="#FF9100"
-            transparent
-            opacity={0.6}
-            side={THREE.DoubleSide}
-            toneMapped={false}
-          />
-        </mesh>
-
-        {/* 4. Core disc - dark translucent fill */}
-        <mesh geometry={coreDiscGeo}>
-          <meshBasicMaterial
-            color="#060d1f"
+            color="#0a142d"
             transparent
             opacity={0.8}
             side={THREE.DoubleSide}
           />
         </mesh>
 
-        {/* 5. Icon symbol inside core */}
-        <Text
+        {/* 4. Icon inside core - via Html for crisp rendering */}
+        <Html
           position={[0, 0, 0.02]}
-          fontSize={0.18}
-          color={iconColor}
-          anchorX="center"
-          anchorY="middle"
-          toneMapped={false}
+          center
+          style={{
+            color: '#00E5FF',
+            fontSize: '16px',
+            fontFamily: "'JetBrains Mono', monospace",
+            fontWeight: 700,
+            pointerEvents: 'none',
+            userSelect: 'none',
+            textShadow: '0 0 8px rgba(0, 229, 255, 0.5)',
+          }}
         >
           {icon}
-        </Text>
+        </Html>
 
-        {/* 6. Pulsing glow point at center */}
-        <mesh ref={glowSphereRef} geometry={glowSphereGeo}>
-          <meshBasicMaterial
-            color="#FFFFFF"
-            transparent
-            opacity={0.8}
-            toneMapped={false}
-          />
-        </mesh>
-
-        {/* 7. Label text above */}
-        <Text
-          position={[0, 0.82, 0.01]}
-          fontSize={0.12}
-          color="white"
-          anchorX="center"
-          anchorY="middle"
-          toneMapped={false}
+        {/* 5. Engine name label - Html for crisp text outside bloom */}
+        <Html
+          position={[0, 0.8, 0]}
+          center
+          style={{
+            color: '#FFFFFF',
+            fontFamily: "'Space Grotesk', sans-serif",
+            fontSize: '13px',
+            fontWeight: 600,
+            letterSpacing: '1.5px',
+            textTransform: 'uppercase',
+            whiteSpace: 'nowrap',
+            textShadow: '0 0 10px rgba(0, 229, 255, 0.5)',
+            pointerEvents: 'none',
+          }}
         >
           {name}
-        </Text>
+        </Html>
 
-        {/* 8. Metric text below */}
-        <Text
-          position={[0, -0.82, 0.01]}
-          fontSize={0.09}
-          color="#00E5FF"
-          anchorX="center"
-          anchorY="middle"
-          toneMapped={false}
+        {/* 6. Metric label below */}
+        <Html
+          position={[0, -0.75, 0]}
+          center
+          style={{
+            color: '#00E5FF',
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: '11px',
+            fontWeight: 500,
+            whiteSpace: 'nowrap',
+            textShadow: '0 0 8px rgba(0, 229, 255, 0.3)',
+            pointerEvents: 'none',
+          }}
         >
           {metric}
-        </Text>
+        </Html>
 
-        {/* 9. ACTIVE badge - small green text */}
-        <Text
-          position={[0.55, 0.6, 0.01]}
-          fontSize={0.06}
-          color="#00E676"
-          anchorX="center"
-          anchorY="middle"
-          toneMapped={false}
+        {/* 7. ACTIVE badge */}
+        <Html
+          position={[0.5, 0.55, 0]}
+          style={{
+            background: 'rgba(0, 230, 118, 0.15)',
+            border: '1px solid #00E676',
+            color: '#00E676',
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: '7px',
+            fontWeight: 700,
+            letterSpacing: '1px',
+            padding: '1px 5px',
+            borderRadius: '3px',
+            textTransform: 'uppercase',
+            pointerEvents: 'none',
+          }}
         >
           ACTIVE
-        </Text>
+        </Html>
       </group>
     </Float>
   )

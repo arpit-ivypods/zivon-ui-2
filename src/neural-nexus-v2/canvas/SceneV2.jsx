@@ -5,7 +5,7 @@ import EnergySplines from './pipeline/EnergySplines'
 import HudNodesGroup from './pipeline/HudNodesGroup'
 import EnergyParticles from './pipeline/EnergyParticles'
 import DataOverlay from './pipeline/DataOverlay'
-import PipelineChartBars from '../../neural-nexus/canvas/pipeline/PipelineChartBars'
+import ChartBarsV2 from './pipeline/ChartBarsV2'
 import AmbientParticles from '../../neural-nexus/canvas/environment/AmbientParticles'
 import LightingV2 from './environment/LightingV2'
 import PostProcessingV2 from './environment/PostProcessingV2'
@@ -55,7 +55,7 @@ export default function SceneV2() {
         gl={{
           antialias: true,
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.5,
+          toneMappingExposure: 0.8,
         }}
       >
         {/* Darker background than v1 (#050B14 -> #030712) */}
@@ -65,7 +65,7 @@ export default function SceneV2() {
 
         {/* All pipeline content shifted left to center in main stage area */}
         <group position={[contentOffsetX, 0, 0]}>
-          <Safe name="ChartBars"><PipelineChartBars /></Safe>
+          <Safe name="ChartBars"><ChartBarsV2 /></Safe>
           <Safe name="DataOverlay"><DataOverlay /></Safe>
           <Safe name="EnergySplines"><EnergySplines /></Safe>
           <Safe name="EnergyParticles"><EnergyParticles /></Safe>

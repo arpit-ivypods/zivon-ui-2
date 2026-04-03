@@ -3,15 +3,14 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { SPLINE_COUNT, getSplinePosition } from '../../../neural-nexus/utils/splines'
 
-const MAX_PARTICLES = 250
-const TRAIL_LENGTH = 5
+const MAX_PARTICLES = 20
+const TRAIL_LENGTH = 2
 const TOTAL_INSTANCES = MAX_PARTICLES * (1 + TRAIL_LENGTH)
 
-// Faster speeds than v1
 const SPEED_CLASSES = [
-  { duration: 2.0 },   // fast
-  { duration: 3.0 },   // medium
-  { duration: 4.5 },   // slow
+  { duration: 3.0 },
+  { duration: 4.5 },
+  { duration: 6.0 },
 ]
 
 export default function EnergyParticles() {
@@ -20,29 +19,29 @@ export default function EnergyParticles() {
   const spawnTimerRef = useRef(0)
   const dummyObj = useMemo(() => new THREE.Object3D(), [])
 
-  // Slightly larger spheres than v1 (0.06 vs 0.04)
-  const geometry = useMemo(() => new THREE.SphereGeometry(0.06, 8, 8), [])
-
-  // Color array for per-instance colors
-  const colorArray = useMemo(() => new Float32Array(TOTAL_INSTANCES * 3).fill(1), [])
+  // Small particles — radius 0.015
+  const geometry = useMemo(() => new THREE.SphereGeometry(0.015, 6, 6), [])
 
   useFrame(({ clock }, delta) => {
     if (!meshRef.current) return
     const time = clock.getElapsedTime()
     const particles = particlesRef.current
 
-    // Spawn new particles more frequently (0.3-1.0s vs 0.5-2.0s in v1)
+    // Spawn less frequently, enforce spacing
     spawnTimerRef.current -= delta
     if (spawnTimerRef.current <= 0 && particles.length < MAX_PARTICLES) {
       const splineIdx = Math.floor(Math.random() * SPLINE_COUNT)
-      const speedClass = SPEED_CLASSES[Math.floor(Math.random() * SPEED_CLASSES.length)]
-      particles.push({
-        splineIndex: splineIdx,
-        t: 0,
-        speed: 1 / speedClass.duration,
-        alive: true,
-      })
-      spawnTimerRef.current = 0.3 + Math.random() * 0.7
+      // Ensure minimum spacing: no other particle on same spline within 0.15 of t=0
+      const tooClose = particles.some(p => p.splineIndex === splineIdx && p.t < 0.15)
+      if (!tooClose) {
+        const speedClass = SPEED_CLASSES[Math.floor(Math.random() * SPEED_CLASSES.length)]
+        particles.push({
+          splineIndex: splineIdx,
+          t: 0,
+          speed: 1 / speedClass.duration,
+        })
+      }
+      spawnTimerRef.current = 0.8 + Math.random() * 1.5
     }
 
     // Update particles
@@ -59,45 +58,31 @@ export default function EnergyParticles() {
     for (let i = 0; i < particles.length && instanceIdx < TOTAL_INSTANCES; i++) {
       const p = particles[i]
 
-      // Main particle
       const pos = getSplinePosition(p.splineIndex, p.t, time)
       dummyObj.position.copy(pos)
       dummyObj.scale.setScalar(1)
       dummyObj.updateMatrix()
       meshRef.current.setMatrixAt(instanceIdx, dummyObj.matrix)
-
-      // Bright white color
-      colorArray[instanceIdx * 3] = 1
-      colorArray[instanceIdx * 3 + 1] = 1
-      colorArray[instanceIdx * 3 + 2] = 1
       instanceIdx++
 
-      // Trail particles
+      // Faint trail — 2 dots
       for (let tr = 1; tr <= TRAIL_LENGTH && instanceIdx < TOTAL_INSTANCES; tr++) {
-        const trailT = p.t - tr * 0.012
+        const trailT = p.t - tr * 0.02
         if (trailT < 0) {
           dummyObj.position.set(0, -100, 0)
           dummyObj.scale.setScalar(0)
-          dummyObj.updateMatrix()
-          meshRef.current.setMatrixAt(instanceIdx, dummyObj.matrix)
         } else {
           const trailPos = getSplinePosition(p.splineIndex, trailT, time)
           dummyObj.position.copy(trailPos)
-          const scl = 1 - tr * 0.18
-          dummyObj.scale.setScalar(Math.max(scl, 0.15))
-          dummyObj.updateMatrix()
-          meshRef.current.setMatrixAt(instanceIdx, dummyObj.matrix)
-
-          const fade = 1 - tr * 0.18
-          colorArray[instanceIdx * 3] = fade
-          colorArray[instanceIdx * 3 + 1] = fade
-          colorArray[instanceIdx * 3 + 2] = fade
+          dummyObj.scale.setScalar(tr === 1 ? 0.6 : 0.3)
         }
+        dummyObj.updateMatrix()
+        meshRef.current.setMatrixAt(instanceIdx, dummyObj.matrix)
         instanceIdx++
       }
     }
 
-    // Hide remaining instances
+    // Hide remaining
     for (let i = instanceIdx; i < TOTAL_INSTANCES; i++) {
       dummyObj.position.set(0, -100, 0)
       dummyObj.scale.setScalar(0)
@@ -106,13 +91,6 @@ export default function EnergyParticles() {
     }
 
     meshRef.current.instanceMatrix.needsUpdate = true
-
-    // Update instance colors
-    const colorAttr = meshRef.current.geometry.getAttribute('color')
-    if (colorAttr) {
-      colorAttr.array.set(colorArray.subarray(0, TOTAL_INSTANCES * 3))
-      colorAttr.needsUpdate = true
-    }
   })
 
   return (
@@ -124,7 +102,7 @@ export default function EnergyParticles() {
       <meshBasicMaterial
         color="#FFFFFF"
         transparent
-        opacity={0.95}
+        opacity={0.9}
         toneMapped={false}
       />
     </instancedMesh>

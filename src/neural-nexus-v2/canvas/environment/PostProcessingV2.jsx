@@ -1,25 +1,19 @@
-import { EffectComposer, Bloom, ChromaticAberration, Noise } from '@react-three/postprocessing'
+import { EffectComposer, Bloom, Noise } from '@react-three/postprocessing'
 import { BlendFunction } from 'postprocessing'
-import { Vector2 } from 'three'
-
-const chromaOffset = new Vector2(0.001, 0.001)
 
 export default function PostProcessingV2() {
   return (
     <EffectComposer multisampling={0}>
       <Bloom
-        intensity={2.0}
-        luminanceThreshold={0.1}
-        luminanceSmoothing={0.9}
+        intensity={0.3}
+        luminanceThreshold={0.85}
+        luminanceSmoothing={0.4}
         mipmapBlur
-        radius={0.8}
+        radius={0.2}
       />
-      <ChromaticAberration
-        offset={chromaOffset}
-        blendFunction={BlendFunction.NORMAL}
-      />
+      {/* Chromatic Aberration REMOVED - causes fringing, not cinematic */}
       <Noise
-        opacity={0.025}
+        opacity={0.02}
         blendFunction={BlendFunction.OVERLAY}
       />
     </EffectComposer>
