@@ -5,13 +5,12 @@ export default function PostProcessingV2() {
   return (
     <EffectComposer multisampling={0}>
       <Bloom
-        intensity={0.3}
-        luminanceThreshold={0.85}
+        intensity={0.45}
+        luminanceThreshold={0.75}
         luminanceSmoothing={0.4}
         mipmapBlur
-        radius={0.2}
+        radius={0.3}
       />
-      {/* Chromatic Aberration REMOVED - causes fringing, not cinematic */}
       <Noise
         opacity={0.02}
         blendFunction={BlendFunction.OVERLAY}
