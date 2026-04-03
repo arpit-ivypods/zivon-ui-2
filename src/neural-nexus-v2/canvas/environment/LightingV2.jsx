@@ -1,35 +1,20 @@
 export default function LightingV2() {
   return (
     <>
-      {/* Near-zero ambient - scene should be DARK, only emissive objects visible */}
-      <ambientLight intensity={0.05} color="#0a1628" />
+      {/* Low ambient — pipes mostly self-illuminated via emissive */}
+      <ambientLight intensity={0.08} color="#0a1628" />
 
-      {/* Cyan accent - left side - subtle */}
-      <pointLight
-        position={[-5, 3, 5]}
-        color="#00E5FF"
-        intensity={0.3}
-        distance={20}
-        decay={2}
-      />
+      {/* Directional from above — creates specular streaks on pipe tops */}
+      <directionalLight position={[0, 10, 5]} color="#FFFFFF" intensity={0.3} />
 
-      {/* Orange accent - right side - very subtle */}
-      <pointLight
-        position={[5, 2, 5]}
-        color="#FF9100"
-        intensity={0.2}
-        distance={20}
-        decay={2}
-      />
+      {/* Cyan tint — left side */}
+      <pointLight position={[-4, 3, 3]} color="#00E5FF" intensity={0.4} distance={15} decay={2} />
 
-      {/* Purple accent - overhead */}
-      <pointLight
-        position={[6, 4, 3]}
-        color="#9D4EDD"
-        intensity={0.15}
-        distance={15}
-        decay={2}
-      />
+      {/* Orange tint — right side */}
+      <pointLight position={[4, 2, 3]} color="#FFB800" intensity={0.3} distance={15} decay={2} />
+
+      {/* Fill — center */}
+      <pointLight position={[0, 0, 5]} color="#FFFFFF" intensity={0.15} distance={20} decay={2} />
     </>
   )
 }
